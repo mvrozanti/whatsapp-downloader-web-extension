@@ -4,19 +4,17 @@
   "name": "WhatsApp-Downloader",
   "version": "0.0",
   "homepage_url": "https://github.com/mvrozanti/whatsapp-downloader-extension",
-  "background": {
+  "background":{ 
     "persistent": false,
     "scripts": ["background.js"]
   },
-  "content_scripts": [{
-    "matches": ["*://*/*"],
-    "js": ["content.js"]
-  }],
   "browser_action": {
       "default_title": "WhatsApp-Downloader",
       "default_popup": "index.html"
   },
   "permissions": [
+      "storage",
+      "downloads",
       "activeTab",
       "<all_urls>"
   ]

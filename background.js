@@ -1,26 +1,26 @@
-function onError(e) { console.error(e); }
+browser.runtime.onMessage.addListener(onMessage);
 
-function notify(message) {
-    browser.notifications.create({
+async function onMessage(message){
+  switch(message.type){
+  case 'saveFile': {
+      const fileName = message.data.filename
+      const fileContent = message.data.content
+      const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' })
+      const objectURL = URL.createObjectURL(blob)
+      browser.downloads.download({
+          url: objectURL,
+          filename: fileName,
+          saveAs: true,
+          conflictAction: 'overwrite'
+      })
+      return
+  }
+}}
+
+async function notify(message) {
+  browser.notifications.create({
       "type": "basic",
       "title": "WhatsApp Downloader",
       "message": message
-    });
-};
-
-function doStuffWithDom(document) {
-    // console.log('I received the following DOM content:\n' + document.getElementsByTagName('span').length);
+  })
 }
-
-browser.runtime.onMessage.addListener(function handleMessage(request, sender, sendResponse){
-    console.log(request); //logs "your message"
-  }
-);
-
-var document = document;
-function toggleCSS(tab) {
-  console.log('!')
-  console.log(Object.keys(browser.tabs.get));
-}
-
-browser.browserAction.onClicked.addListener(toggleCSS);
