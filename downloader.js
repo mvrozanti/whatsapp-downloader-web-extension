@@ -3,33 +3,33 @@ function modifyDOM() {
 
     function getElementsByXpath(path) { return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null) }
 
-    function getMissingDate(messageDiv, scrollableDiv){
-        scrollableDiv.scrollBy(0,-1) // show date baloon
-        let dateBaloonElement = document.querySelectorAll('div[class*="focusable-list-item"]:not([data-id]) div span[dir="auto"] ')
-        console.log(dateBaloonElement)
-        // console.log(dateBaloonElement.textContent)
-        // scroll up until date is found
-        // and set it to datetimeSender
+    function getDateBaloons(messageDiv){
+        messageDiv.parentElement.parentElement.scrollBy(0,-1) // show date baloons
+        return document.querySelectorAll('div[class*="focusable-list-item"]:not([data-id]) div span[dir="auto"]')
     }
 
-    function getDatetimeSender(messageDiv, scrollableDiv){
-        var datetimeSender = null
-        var divsForGettingToDateTimeSender = messageDiv.getElementsByTagName('div')
-        Array.prototype.forEach.call(divsForGettingToDateTimeSender, function(el2) {
+    function isFirstAfterSecond(el1, el2){
+
+    }
+
+    function getDatetimeSender(messageDiv){
+        let datetimeSender = null
+        let divsForGettingToDateTimeSender = messageDiv.getElementsByTagName('div')
+        Array.prototype.forEach.call(divsForGettingToDateTimeSender, function(el) {
             // simple text message
-            if(el2.hasAttribute('data-pre-plain-text'))
-                datetimeSender = el2.getAttribute('data-pre-plain-text')
+            if(el.hasAttribute('data-pre-plain-text'))
+                datetimeSender = el.getAttribute('data-pre-plain-text')
         })
-        var sender = null
-        var datetime = null
+        let sender = null
+        let datetime = null
         if(datetimeSender == null){
-            Array.prototype.forEach.call(messageDiv.getElementsByTagName('span'), function(el2) {
-                if(el2.hasAttribute('aria-label'))
-                    sender = el2.getAttribute('aria-label')
-                if(el2.hasAttribute('dir') && el2.getAttribute('dir') == 'auto'){
-                    var time = el2.textContent 
-                    var date = getMissingDate(messageDiv, scrollableDiv)
-                    datetime = '[' + time + ', ' + date + ']'
+            Array.prototype.forEach.call(messageDiv.getElementsByTagName('span'), function(el) {
+                if(el.hasAttribute('aria-label'))
+                    sender = el.getAttribute('aria-label')
+                if(el.hasAttribute('dir') && el.getAttribute('dir') == 'auto'){
+                    let time = el.textContent 
+                    let dateBaloons = getDateBaloons(messageDiv)
+                    // datetime = '[' + time + ', ' + date + ']'
                 }
             })
 
@@ -44,50 +44,57 @@ function modifyDOM() {
     }
 
     function getCurrentDate(){
-        var today = new Date()
-        var dd = String(today.getDate()).padStart(2, '0')
-        var MM = String(today.getMonth() + 1).padStart(2, '0') //January is 0!
-        var yyyy = today.getFullYear()
+        let today = new Date()
+        let dd = String(today.getDate()).padStart(2, '0')
+        let MM = String(today.getMonth() + 1).padStart(2, '0') //January is 0!
+        let yyyy = today.getFullYear()
         today = dd + '/' + mm + '/' + yyyy
         return today
     }
 
-    function getMessageDivType(messageDiv){
+    function getMessageTypes(messageDiv){
+        let types = []
         if(messageDiv.querySelectorAll('.selectable-text.invisible-space.copyable-text').length > 0)
-            return 'text'
+            types.push('text')
         if(messageDiv.querySelectorAll('span[data-icon="recalled"]').length > 0)
-            return 'deleted'
-
+            types.push('deleted')
+        return types
     }
 
-    function getMessageDivContent(messageDiv, messageType){
-        switch(messageType){
-        case 'text':
-            return messageDiv.querySelector('.selectable-text.invisible-space.copyable-text').textContent
-        }
-
+    function getMessageText(messageDiv){
+        return messageDiv.querySelector('.selectable-text.invisible-space.copyable-text').textContent
     }
 
     function getMessages(doc){
         let messages = []
 
-        Array.prototype.forEach.call(doc.getElementsByTagName('div'), function(messageDiv){
-            if(messageDiv.hasAttribute('class')){
-                let messageDivClass = messageDiv.getAttribute('class')
-                let matches =  /message-(\w{2,3})/g.exec(messageDivClass)
-                if(matches != null){
-                    let scrollableDiv = messageDiv.parentElement.parentElement
-                    // let messageDivClass = matches[1]
-                    let datetimeSender = getDatetimeSender(messageDiv, scrollableDiv)
-                    let messageType = getMessageDivType(messageDiv)
-                    let messageContent = getMessageDivContent(messageDiv, messageType)
-                    // console.log('datetimeSender = ' + datetimeSender)
-                    // console.log('messageType = ' + messageType)
-                    // console.log('messageContent = ' + messageContent)
-                    // console.log('\n')
+        try {
+            Array.prototype.forEach.call(doc.getElementsByTagName('div'), function(messageDiv){
+                if(messageDiv.hasAttribute('class')){
+                    let messageDivClass = messageDiv.getAttribute('class')
+                    let matches =  /message-(\w{2,3})/g.exec(messageDivClass)
+                    if(matches != null){
+                        let message = {}
+                        // let messageDivClass = matches[1]
+                        let datetimeSender = getDatetimeSender(messageDiv)
+                        let datetimeSenderMatches = /(\[.*\]) (.*):$/g.exec(datetimeSender)
+                        message.sender = datetimeSenderMatches ? datetimeSenderMatches[1] : null
+                        let datetime = datetimeSenderMatches ? datetimeSenderMatches[0] : null
+                        let messageTypes = getMessageTypes(messageDiv)
+                        message.text = messageTypes.includes('text') ? getMessageText(messageDiv) : null
+                        message.isDeleted = messageTypes.includes('deleted') 
+
+                        // let messageContent = getMessageDivContent(messageDiv, messageTypes)
+                        console.log('datetimeSender = ' + datetimeSender)
+                        console.log('messageTypes = ' + messageTypes)
+                        console.log(message)
+                        console.log('\n')
+                    }
                 }
-            }
-        })
+            })
+        } catch(e) {
+            console.log(e)
+        }
     }
 
 
