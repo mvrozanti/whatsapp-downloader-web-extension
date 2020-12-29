@@ -9,7 +9,10 @@
     "scripts": ["background.js"]
   },
   "browser_action": {
-      "default_title": "WhatsApp-Downloader"
+      "default_title": "WhatsApp-Downloader",
+      "default_icon": {
+        "630": "icon.png"
+      }
   },
   "permissions": [
       "storage",
