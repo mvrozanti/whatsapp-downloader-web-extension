@@ -9,34 +9,75 @@ function modifyDOM() {
     }
 
     function isFirstAfterSecond(el1, el2){
-
+        let allHTML = el1.parentElement.innerHTML
+        let html1pos = allHTML.indexOf(el1.innerHTML) 
+        let html2pos = allHTML.indexOf(el2.innerHTML) 
+        if(html1pos == -1 || html2pos == -1 || html1pos == html2pos)
+            return null
+        return html1pos > html2pos
     }
 
     function getDatetimeSender(messageDiv){
-        let datetimeSender = null
+        let date = null
+        let time = null
+        let sender = null
         let divsForGettingToDateTimeSender = messageDiv.getElementsByTagName('div')
         Array.prototype.forEach.call(divsForGettingToDateTimeSender, function(el) {
-            // simple text message
-            if(el.hasAttribute('data-pre-plain-text'))
-                datetimeSender = el.getAttribute('data-pre-plain-text')
+            if(el.hasAttribute('data-pre-plain-text')){
+                datetimeSenderMatches = /\[(.*), (.*)\] (.*):$/g.exec(el.getAttribute('data-pre-plain-text'))
+                if(datetimeSenderMatches){
+                    time = datetimeSenderMatches[1]
+                    date = datetimeSenderMatches[2]
+                    sender = datetimeSenderMatches[3]
+                    return
+                }
+            }
         })
-        let sender = null
-        let datetime = null
-        if(datetimeSender == null){
+        if(sender == null){
             Array.prototype.forEach.call(messageDiv.getElementsByTagName('span'), function(el) {
-                if(el.hasAttribute('aria-label'))
+                if(el.hasAttribute('aria-label')){
                     sender = el.getAttribute('aria-label')
-                if(el.hasAttribute('dir') && el.getAttribute('dir') == 'auto'){
-                    let time = el.textContent 
-                    let dateBaloons = getDateBaloons(messageDiv)
-                    // datetime = '[' + time + ', ' + date + ']'
+                    sender = sender.substring(0, sender.length-1)
+                    return
                 }
             })
-
-            datetimeSender = datetime + sender
-
         }
-        return datetimeSender
+
+        if(date == null){
+            let balloonList = getDateBaloons(messageDiv)
+            let balloonArray = [].slice.call(balloonList, 0).reverse()
+            for(let i=0;i<balloonArray.length;i++){
+                // console.log('ballonArray['+i+']='+balloonArray[i].textContent)
+                if(date == null){
+                    let firstAfterSecond = isFirstAfterSecond(messageDiv, balloonArray[i])
+                    if(firstAfterSecond){
+                        // console.log('messageDiv is after balloon['+i+']='+balloonArray[i].textContent)
+                        date = balloonArray[i].textContent
+                        // console.log('date='+date)
+                    } else if(firstAfterSecond == null){
+                        // console.log('firstAfterSecond=null')
+                        // } else {
+                            //     console.log('el before dateBaloon['+i+']')
+                    }
+                }
+            }
+        }
+
+        if(time == null){
+            Array.prototype.forEach.call(messageDiv.getElementsByTagName('span'), function(el) {
+                if(el.hasAttribute('dir') && el.getAttribute('dir') == 'auto'){
+                    time = el.textContent 
+            }})
+        }
+
+        if(/ ?Read ?/g.exec(sender)){
+            sender = 'You'
+        }
+        // console.log('date='+date)
+        // console.log('time='+time)
+        // console.log('sender='+sender)
+        // console.log('\n')
+        return [date,time,sender]
     }
 
     function getMainConversationDiv(document){
@@ -76,17 +117,17 @@ function modifyDOM() {
                     if(matches != null){
                         let message = {}
                         // let messageDivClass = matches[1]
-                        let datetimeSender = getDatetimeSender(messageDiv)
-                        let datetimeSenderMatches = /(\[.*\]) (.*):$/g.exec(datetimeSender)
-                        message.sender = datetimeSenderMatches ? datetimeSenderMatches[1] : null
-                        let datetime = datetimeSenderMatches ? datetimeSenderMatches[0] : null
+                        let dateTimeSender = getDatetimeSender(messageDiv)
+                        message.date = dateTimeSender[0]
+                        message.time = dateTimeSender[1]
+                        message.sender = dateTimeSender[2]
+                        // let datetimeSenderMatches = /(\[.*\]) (.*):$/g.exec(datetimeSender)
                         let messageTypes = getMessageTypes(messageDiv)
                         message.text = messageTypes.includes('text') ? getMessageText(messageDiv) : null
                         message.isDeleted = messageTypes.includes('deleted') 
 
                         // let messageContent = getMessageDivContent(messageDiv, messageTypes)
-                        console.log('datetimeSender = ' + datetimeSender)
-                        console.log('messageTypes = ' + messageTypes)
+                        // console.log('messageTypes = ' + messageTypes)
                         console.log(message)
                         console.log('\n')
                     }
