@@ -1,4 +1,6 @@
 function modifyDOM() {
+  var weekDays = [ "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY" ]
+
   function encode_utf8(s) { return unescape(encodeURIComponent(s)); }
 
   function decode_utf8(s) { return decodeURIComponent(escape(s)); }
@@ -37,14 +39,17 @@ function modifyDOM() {
         }
       }
     })
+
     if(sender == null){
-      Array.prototype.forEach.call(messageDiv.getElementsByTagName('span'), function(el) {
-        if(el.hasAttribute('aria-label')){
-          sender = el.getAttribute('aria-label')
+      let spansOfMessageDiv = [].slice.call(messageDiv.getElementsByTagName('span'), 0)
+      for(let i=0;i<spansOfMessageDiv.length;i++){
+        let spanOfMessageDiv = spansOfMessageDiv[i]
+        if(spanOfMessageDiv.hasAttribute('aria-label')){
+          sender = spanOfMessageDiv.getAttribute('aria-label')
           sender = sender.substring(0, sender.length-1)
-          return
+          break
         }
-      })
+      }
     }
 
     if(date == null){
@@ -88,12 +93,22 @@ function modifyDOM() {
     return document.querySelector('#main').getElementsByTagName('div')[2]
   }
 
+  function getDateForLastOccurence(strDay) {
+    var date = new Date()
+    var index = weekDays.indexOf(strDay)
+    var difference = date.getDay() - index
+    if(difference < 0) 
+      difference = -7 - difference
+    date.setDate(date.getDate() + difference)
+    return date
+  }
+
   function getCurrentDate(){
     let today = new Date()
     let dd = String(today.getDate()).padStart(2, '0')
     let MM = String(today.getMonth() + 1).padStart(2, '0') //January is 0!
     let yyyy = today.getFullYear()
-    today = dd + '/' + mm + '/' + yyyy
+    today = dd + '/' + MM + '/' + yyyy
     return today
   }
 
@@ -103,6 +118,8 @@ function modifyDOM() {
       types.push('text')
     if(messageDiv.querySelectorAll('span[data-icon="recalled"]').length > 0)
       types.push('deleted')
+    if(messageDiv.querySelectorAll('img').length > 0)
+      types.push('image')
     return types
   }
 
@@ -110,30 +127,39 @@ function modifyDOM() {
     return messageDiv.querySelector('.selectable-text.invisible-space.copyable-text').textContent
   }
 
-  function getMessages(doc){
+  function getMessageImage(messageDiv){
+    var blob = fetch(messageDiv.querySelectorAll('img')[1].src).then(r => r.blob()) 
+    var reader = new FileReader()
+    console.log(blob)
+    reader.readAsDataURL(blob)
+    var base64data = null
+    reader.onloadend = function() { base64data = reader.result }
+    return base64data
+  }
+
+  function getMessages(){
+    console.log('!')
     let messages = []
 
     try {
-      Array.prototype.forEach.call(doc.getElementsByTagName('div'), function(messageDiv){
+      Array.prototype.forEach.call(document.getElementsByTagName('div'), function(messageDiv){
         if(messageDiv.hasAttribute('class')){
           let messageDivClass = messageDiv.getAttribute('class')
           let matches =  /message-(\w{2,3})/g.exec(messageDivClass)
           if(matches != null){
             let message = {}
-            // let messageDivClass = matches[1]
             let dateTimeSender = getDatetimeSender(messageDiv)
             message.date = dateTimeSender[0]
             message.time = dateTimeSender[1]
             message.sender = dateTimeSender[2]
-            // let datetimeSenderMatches = /(\[.*\]) (.*):$/g.exec(datetimeSender)
             let messageTypes = getMessageTypes(messageDiv)
             message.text = messageTypes.includes('text') ? getMessageText(messageDiv) : null
+            // message.image = messageTypes.includes('image') ? getMessageImage(messageDiv) : null
             message.isDeleted = messageTypes.includes('deleted') 
-
-            // let messageContent = getMessageDivContent(messageDiv, messageTypes)
-            // console.log('messageTypes = ' + messageTypes)
-            console.log(message)
-            console.log('\n')
+            if(message.image != null){
+              console.log(message)
+              console.log('\n')
+            }
           }
         }
       })
@@ -142,34 +168,30 @@ function modifyDOM() {
     }
   }
 
+  return {chatTile: chatTitle, messages: getMessages() }
+}
 
-  let conversationTitle = document.getElementsByTagName('header')[1].getElementsByTagName('span')[1].textContent
-  console.log('conversationTitle: ' + conversationTitle + '\n\n')
-
-  // let mainConversationArea = document.querySelector('#main')
-  // let mainConversationDiv = mainConversationArea.getElementsByTagName('div')[2]
-  // let messageList = getElementByXpath('/html/body/div[1]/div/div/div[4]/div/div[3]/div/div/div[3]')
-  // let messageListDivs = messageList.getElementsByTagName('div')
-  let messages = getMessages(document)
-  return document.body.innerHTML
+function saveFile(filename, content){
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const objectURL = URL.createObjectURL(blob)
+  browser.downloads.download({
+      url: objectURL,
+      filename: filename,
+      saveAs: true,
+      conflictAction: 'overwrite'
+  })
 }
 
 async function onMessage(message){
   switch(message.type){
-  case 'saveFile': {
-      const fileName = message.data.filename
-      const fileContent = message.data.content
-      const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' })
-      const objectURL = URL.createObjectURL(blob)
-      browser.downloads.download({
-          url: objectURL,
-          filename: fileName,
-          saveAs: true,
-          conflictAction: 'overwrite'
-      })
-      return
+    case 'saveFile': {
+        const fileName = message.data.filename
+        const fileContent = message.data.content
+        saveFile(fileName, fileContent)
+        return
+    }
   }
-}}
+}
 
 async function notify(message) {
   browser.notifications.create({
@@ -179,11 +201,12 @@ async function notify(message) {
   })
 }
 
+browser.runtime.onMessage.addListener(onMessage)
+
 browser.browserAction.onClicked.addListener(() => {
   chrome.tabs.executeScript({
       code: '(' + modifyDOM + ')()'
   }, (results) => {
+    saveFile('kek', results)
   })
 });
-
-browser.runtime.onMessage.addListener(onMessage);
