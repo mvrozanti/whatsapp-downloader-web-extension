@@ -1,4 +1,8 @@
 function modifyDOM() {
+    function encode_utf8(s) { return unescape(encodeURIComponent(s)); }
+
+    function decode_utf8(s) { return decodeURIComponent(escape(s)); }
+
     function getElementByXpath(path) { return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue }
 
     function getElementsByXpath(path) { return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null) }
