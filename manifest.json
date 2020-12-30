@@ -11,7 +11,7 @@
   "browser_action": {
       "default_title": "WhatsApp-Downloader",
       "default_icon": {
-        "630": "icon.png"
+        "894": "icon.png"
       }
   },
   "permissions": [

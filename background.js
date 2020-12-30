@@ -89,8 +89,8 @@ function modifyDOM() {
     return [date,time,sender]
   }
 
-  function getMainConversationDiv(document){
-    return document.querySelector('#main').getElementsByTagName('div')[2]
+  function getMainConversationDiv(){
+    return getElementByXpath('/html/body/div[1]/div/div/div[4]/div/div[3]/div/div')
   }
 
   function getDateForLastOccurence(strDay) {
@@ -127,19 +127,40 @@ function modifyDOM() {
     return messageDiv.querySelector('.selectable-text.invisible-space.copyable-text').textContent
   }
 
-  function getMessageImage(messageDiv){
-    var blob = fetch(messageDiv.querySelectorAll('img')[1].src).then(r => r.blob()) 
-    var reader = new FileReader()
-    console.log(blob)
-    reader.readAsDataURL(blob)
-    var base64data = null
-    reader.onloadend = function() { base64data = reader.result }
-    return base64data
+  async function getMessageImage(messageDiv){
+    var blob = await fetch(messageDiv.querySelectorAll('img')[1].src).then(r => r.blob()) 
+    return new Promise((resolve, reject) => {
+        let reader = new FileReader()
+        reader.readAsDataURL(blob)
+        reader.onloadend = function() { resolve(reader.result) }
+    })
+  }
+
+  function sleep(time) {
+    return new Promise((resolve) => setTimeout(resolve, time))
+  }
+
+  function scrollToTop(oldMax){
+    let mainConversationArea = getMainConversationDiv()
+    mainConversationArea.scrollBy(0,-999999999999)
+    while(mainConversationArea.offsetHeight + mainConversationArea.scrollTop < mainConversationArea.scrollHeight) {
+      
+    }
+    // sleep(2000).then(r=>{
+    //   if(oldMax < mainConversationArea.scrollTopMax){
+    //     console.log(oldMax + ' >= ' + mainConversationArea.scrollTopMax)
+    //     scrollToTop(mainConversationArea.scrollTopMax)
+    //   } else {
+    //     console.log('stop: ' + oldMax + ' >=' + mainConversationArea.scrollTopmax)
+    //   }
+    // })
   }
 
   function getMessages(){
-    console.log('!')
     let messages = []
+    
+    scrollToTop(0)
+    return
 
     try {
       Array.prototype.forEach.call(document.getElementsByTagName('div'), function(messageDiv){
@@ -154,21 +175,25 @@ function modifyDOM() {
             message.sender = dateTimeSender[2]
             let messageTypes = getMessageTypes(messageDiv)
             message.text = messageTypes.includes('text') ? getMessageText(messageDiv) : null
-            // message.image = messageTypes.includes('image') ? getMessageImage(messageDiv) : null
+            if(messageTypes.includes('image'))
+              getMessageImage(messageDiv).then(r => message.image = r)
+            else
+              message.image = null
             message.isDeleted = messageTypes.includes('deleted') 
-            if(message.image != null){
-              console.log(message)
-              console.log('\n')
-            }
+            messages.push(message)
           }
         }
       })
     } catch(e) {
-      console.log(e)
+      console.error(e)
     }
+    return messages
   }
 
-  return {chatTile: chatTitle, messages: getMessages() }
+  let chatTitle = document.querySelector('header span[title]').textContent
+  let le_return = { 'chatTile': chatTitle, 'messages': getMessages() }
+  console.log(le_return)
+  return le_return
 }
 
 function saveFile(filename, content){
@@ -207,6 +232,6 @@ browser.browserAction.onClicked.addListener(() => {
   chrome.tabs.executeScript({
       code: '(' + modifyDOM + ')()'
   }, (results) => {
-    saveFile('kek', results)
+    // saveFile('kek', results)
   })
 });
