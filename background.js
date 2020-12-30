@@ -1,10 +1,6 @@
 function modifyDOM() {
   var weekDays = [ "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY" ]
 
-  function encode_utf8(s) { return unescape(encodeURIComponent(s)); }
-
-  function decode_utf8(s) { return decodeURIComponent(escape(s)); }
-
   function getElementByXpath(path) { return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue }
 
   function getElementsByXpath(path) { return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null) }
@@ -21,6 +17,10 @@ function modifyDOM() {
     if(html1pos == -1 || html2pos == -1 || html1pos == html2pos)
       return null
     return html1pos > html2pos
+  }
+
+  function isLoadingMessages(){
+    return document.body.innerHTML.indexOf('loading messages') > -1
   }
 
   function getDatetimeSender(messageDiv){
@@ -136,30 +136,21 @@ function modifyDOM() {
     })
   }
 
-  function sleep(time) {
-    return new Promise((resolve) => setTimeout(resolve, time))
+  function keepScrolling(){
+    let mainConversationArea = getMainConversationDiv()
+    if(mainConversationArea.scrollTop > 0 || isLoadingMessages())
+      mainConversationArea.scrollTop = 0
+    setTimeout(keepScrolling, 1000)
   }
 
-  function scrollToTop(oldMax){
-    let mainConversationArea = getMainConversationDiv()
-    mainConversationArea.scrollBy(0,-999999999999)
-    while(mainConversationArea.offsetHeight + mainConversationArea.scrollTop < mainConversationArea.scrollHeight) {
-      
-    }
-    // sleep(2000).then(r=>{
-    //   if(oldMax < mainConversationArea.scrollTopMax){
-    //     console.log(oldMax + ' >= ' + mainConversationArea.scrollTopMax)
-    //     scrollToTop(mainConversationArea.scrollTopMax)
-    //   } else {
-    //     console.log('stop: ' + oldMax + ' >=' + mainConversationArea.scrollTopmax)
-    //   }
-    // })
+  function sleep(time) {
+    return new Promise((resolve) => setTimeout(resolve, time))
   }
 
   function getMessages(){
     let messages = []
     
-    scrollToTop(0)
+    setTimeout(keepScrolling, 0)
     return
 
     try {
@@ -234,4 +225,4 @@ browser.browserAction.onClicked.addListener(() => {
   }, (results) => {
     // saveFile('kek', results)
   })
-});
+})
