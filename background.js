@@ -1,7 +1,17 @@
+// https://stackoverflow.com/questions/23895377/sending-message-from-a-background-script-to-a-content-script-then-to-a-injected
 function modifyDOM() {
   var weekDays = [ "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY" ]
 
   function getElementByXpath(path) { return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue }
+
+  function getMainConversationDiv(){
+    return getElementByXpath('/html/body/div[1]/div/div/div[4]/div/div[3]/div/div')
+  }
+
+  var lastScroll = null
+  getMainConversationDiv().onscroll = function(){
+    lastScroll = new Date().getTime()
+  }
 
   function getElementsByXpath(path) { return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null) }
 
@@ -89,10 +99,6 @@ function modifyDOM() {
     return [date,time,sender]
   }
 
-  function getMainConversationDiv(){
-    return getElementByXpath('/html/body/div[1]/div/div/div[4]/div/div[3]/div/div')
-  }
-
   function getDateForLastOccurence(strDay) {
     var date = new Date()
     var index = weekDays.indexOf(strDay)
@@ -136,23 +142,26 @@ function modifyDOM() {
     })
   }
 
+  function getChatTitle(){
+    return document.querySelector('header span[title]').textContent
+  }
+
   function keepScrolling(){
     let mainConversationArea = getMainConversationDiv()
     if(mainConversationArea.scrollTop > 0 || isLoadingMessages())
       mainConversationArea.scrollTop = 0
     setTimeout(keepScrolling, 1000)
+    if(lastScroll != null && new Date().getTime() - lastScroll > 6000){
+      console.log('SCROLLED TO TOP FOR SURE')
+      // somehow getMessages and return from modifyDOM
+    }
   }
 
-  function sleep(time) {
-    return new Promise((resolve) => setTimeout(resolve, time))
-  }
+  let mainConversationArea = getMainConversationDiv()
 
   function getMessages(){
     let messages = []
     
-    setTimeout(keepScrolling, 0)
-    return
-
     try {
       Array.prototype.forEach.call(document.getElementsByTagName('div'), function(messageDiv){
         if(messageDiv.hasAttribute('class')){
@@ -181,10 +190,9 @@ function modifyDOM() {
     return messages
   }
 
-  let chatTitle = document.querySelector('header span[title]').textContent
-  let le_return = { 'chatTile': chatTitle, 'messages': getMessages() }
-  console.log(le_return)
-  return le_return
+  setTimeout(keepScrolling, 0)
+  // return { 'chatTile': getChatTitle(), 'messages': getMessages() }
+  return // whatever is done in keepScrolling ? 
 }
 
 function saveFile(filename, content){
@@ -200,6 +208,10 @@ function saveFile(filename, content){
 
 async function onMessage(message){
   switch(message.type){
+    case 'kek': {
+      console.log('kek')
+      break
+    }
     case 'saveFile': {
         const fileName = message.data.filename
         const fileContent = message.data.content
@@ -222,7 +234,9 @@ browser.runtime.onMessage.addListener(onMessage)
 browser.browserAction.onClicked.addListener(() => {
   chrome.tabs.executeScript({
       code: '(' + modifyDOM + ')()'
-  }, (results) => {
-    // saveFile('kek', results)
+  }, (chat) => {
+    console.log('RESULTS:')
+    console.log(chat)
+    // saveFile('kek', chat)
   })
 })
