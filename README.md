@@ -11,7 +11,7 @@ This web extension scrolls to the top of a WhatsApp chat and downloads it as a J
             "date": "31/12/2020",
             "time": "12:12",
             "text": "Hi",
-            "images": [],
+            "image": null,
             "audio": null,
             "video": null,
             "isDeleted": false
@@ -23,7 +23,7 @@ This web extension scrolls to the top of a WhatsApp chat and downloads it as a J
             "date": "31/12/2020",
             "time": "12:13",
             "text": "Hi back",
-            "images": [],
+            "image": <base 64 data>,
             "audio": null,
             "video": null,
             "isDeleted": false
@@ -33,7 +33,7 @@ This web extension scrolls to the top of a WhatsApp chat and downloads it as a J
                 "date": "31/12/2020",
                 "time": "12:12",
                 "text": "Hi",
-                "images": [],
+                "image": null,
                 "audio": null,
                 "video": null,
                 "isDeleted": false
@@ -45,9 +45,10 @@ This web extension scrolls to the top of a WhatsApp chat and downloads it as a J
 }
 ```
 
-## Notes
+## Format Notes
 
-- The `images` message attribute is composed of a collection of images in base64 format.
+- The `image` message attribute is composed of an image in base64 format.
+<!-- - The datetime format is ISO-8601 -->
 
 <!-- ### Known issues -->
 

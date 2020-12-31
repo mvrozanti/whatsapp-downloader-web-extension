@@ -1,5 +1,6 @@
 // https://stackoverflow.com/questions/23895377/sending-message-from-a-background-script-to-a-content-script-then-to-a-injected
 function modifyDOM() {
+  console.log(this)
   var weekDays = [ "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY" ]
 
   function getElementByXpath(path) { return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue }
@@ -16,7 +17,7 @@ function modifyDOM() {
   function getElementsByXpath(path) { return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null) }
 
   function getDateBaloons(messageDiv){
-    messageDiv.parentElement.parentElement.scrollBy(0,-1) // show date baloons
+    messageDiv.parentElement.parentElement.scrollBy(0,-1) // makes date baloon appear
     return document.querySelectorAll('div[class*="focusable-list-item"]:not([data-id]) div span[dir="auto"]')
   }
 
@@ -29,9 +30,7 @@ function modifyDOM() {
     return html1pos > html2pos
   }
 
-  function isLoadingMessages(){
-    return document.body.innerHTML.indexOf('loading messages') > -1
-  }
+  function isLoadingMessages(){ return document.body.innerHTML.indexOf('loading messages') > -1 }
 
   function getDatetimeSender(messageDiv){
     let date = null
@@ -66,18 +65,13 @@ function modifyDOM() {
       let balloonList = getDateBaloons(messageDiv)
       let balloonArray = [].slice.call(balloonList, 0).reverse()
       for(let i=0;i<balloonArray.length;i++){
-        // console.log('ballonArray['+i+']='+balloonArray[i].textContent)
         if(date == null){
           let firstAfterSecond = isFirstAfterSecond(messageDiv, balloonArray[i])
           if(firstAfterSecond){
-            // console.log('messageDiv is after balloon['+i+']='+balloonArray[i].textContent)
             date = balloonArray[i].textContent
-            // console.log('date='+date)
           } else if(firstAfterSecond == null){
-            // console.log('firstAfterSecond=null')
-            // } else {
               //     console.log('el before dateBaloon['+i+']')
-            }
+          }
         }
       }
     }
@@ -92,10 +86,6 @@ function modifyDOM() {
     if(/ ?Read ?/g.exec(sender)){
       sender = 'You'
     }
-    // console.log('date='+date)
-    // console.log('time='+time)
-    // console.log('sender='+sender)
-    // console.log('\n')
     return [date,time,sender]
   }
 
@@ -154,7 +144,7 @@ function modifyDOM() {
     if(lastScroll != null && new Date().getTime() - lastScroll > 6000){
       console.log('SCROLLED TO TOP FOR SURE')
       console.log('NOW ABLE TO RETURN FROM modifyDOM')
-      // somehow getMessages and return from modifyDOM
+      // somehow getMessages and return them from modifyDOM
     }
   }
 
@@ -230,7 +220,7 @@ browser.runtime.onMessage.addListener(onMessage)
 
 browser.browserAction.onClicked.addListener(() => {
   chrome.tabs.executeScript({
-      code: '(' + modifyDOM + ')()'
+      code: '(' + modifyDOM + ')()',
   }, (chat) => {
     console.log('RESULTS:')
     console.log(chat)
