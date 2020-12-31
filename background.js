@@ -153,6 +153,7 @@ function modifyDOM() {
     setTimeout(keepScrolling, 1000)
     if(lastScroll != null && new Date().getTime() - lastScroll > 6000){
       console.log('SCROLLED TO TOP FOR SURE')
+      console.log('NOW ABLE TO RETURN FROM modifyDOM')
       // somehow getMessages and return from modifyDOM
     }
   }
@@ -192,7 +193,7 @@ function modifyDOM() {
 
   setTimeout(keepScrolling, 0)
   // return { 'chatTile': getChatTitle(), 'messages': getMessages() }
-  return // whatever is done in keepScrolling ? 
+  return//<whatever is after keepScrolling>
 }
 
 function saveFile(filename, content){
@@ -208,10 +209,6 @@ function saveFile(filename, content){
 
 async function onMessage(message){
   switch(message.type){
-    case 'kek': {
-      console.log('kek')
-      break
-    }
     case 'saveFile': {
         const fileName = message.data.filename
         const fileContent = message.data.content
