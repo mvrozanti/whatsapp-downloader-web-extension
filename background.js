@@ -1,17 +1,12 @@
 // https://stackoverflow.com/questions/23895377/sending-message-from-a-background-script-to-a-content-script-then-to-a-injected
 function modifyDOM() {
-  console.log(this)
+  console.log('scraping ')
   var weekDays = [ "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY" ]
 
   function getElementByXpath(path) { return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue }
 
   function getMainConversationDiv(){
     return getElementByXpath('/html/body/div[1]/div/div/div[4]/div/div[3]/div/div')
-  }
-
-  var lastScroll = null
-  getMainConversationDiv().onscroll = function(){
-    lastScroll = new Date().getTime()
   }
 
   function getElementsByXpath(path) { return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null) }
@@ -123,37 +118,56 @@ function modifyDOM() {
     return messageDiv.querySelector('.selectable-text.invisible-space.copyable-text').textContent
   }
 
+  function clickButton(div){
+    div.querySelector('button').click()
+  }
+
   async function getMessageImage(messageDiv){
-    var blob = await fetch(messageDiv.querySelectorAll('img')[1].src).then(r => r.blob()) 
-    return new Promise((resolve, reject) => {
+    let imgSrcs = messageDiv.querySelectorAll('img')
+    // let imgSrc = null
+    // if(imgSrcs.length < 2){
+    //   console.log("imgSrcs < 2")
+    //   console.log(messageDiv)
+    //   console.log(imgSrcs)
+    //   clickButton(messageDiv)
+    // }
+    imgSrc = imgSrcs[1]
+    if(imgSrc){
+      var blob = await fetch(imgSrc.src).then(r => r.blob()).catch(console.log)
+      return new Promise((resolve, reject) => {
         let reader = new FileReader()
         reader.readAsDataURL(blob)
         reader.onloadend = function() { resolve(reader.result) }
-    })
+      })
+    }
   }
 
   function getChatTitle(){
     return document.querySelector('header span[title]').textContent
   }
 
-  function keepScrolling(){
+  var lastScroll = null
+  var doneScrolling = false
+  getMainConversationDiv().onscroll = function(){ lastScroll = new Date().getTime() }
+
+  function keepScrolling(resolve){
+    if(doneScrolling)
+      return
     let mainConversationArea = getMainConversationDiv()
     if(mainConversationArea.scrollTop > 0 || isLoadingMessages())
       mainConversationArea.scrollTop = 0
-    setTimeout(keepScrolling, 1000)
+    setTimeout(keepScrolling, 1000, resolve)
     if(lastScroll != null && new Date().getTime() - lastScroll > 6000){
-      console.log('SCROLLED TO TOP FOR SURE')
-      console.log('NOW ABLE TO RETURN FROM modifyDOM')
-      // somehow getMessages and return them from modifyDOM
+      doneScrolling = true
+      getChat(resolve)
     }
   }
 
-  let mainConversationArea = getMainConversationDiv()
-
-  function getMessages(){
+  function getChat(resolve){
     let messages = []
     
     try {
+      var promises = []
       Array.prototype.forEach.call(document.getElementsByTagName('div'), function(messageDiv){
         if(messageDiv.hasAttribute('class')){
           let messageDivClass = messageDiv.getAttribute('class')
@@ -167,7 +181,7 @@ function modifyDOM() {
             let messageTypes = getMessageTypes(messageDiv)
             message.text = messageTypes.includes('text') ? getMessageText(messageDiv) : null
             if(messageTypes.includes('image'))
-              getMessageImage(messageDiv).then(r => message.image = r)
+              promises.push(getMessageImage(messageDiv).then(r => message.image = r).catch(console.log))
             else
               message.image = null
             message.isDeleted = messageTypes.includes('deleted') 
@@ -178,12 +192,15 @@ function modifyDOM() {
     } catch(e) {
       console.error(e)
     }
-    return messages
+
+    Promise.all(promises).then(_ => {
+      resolve({'title': getChatTitle(), 'messages': messages})
+    }).catch(err => console.log(err));
   }
 
-  setTimeout(keepScrolling, 0)
-  // return { 'chatTile': getChatTitle(), 'messages': getMessages() }
-  return//<whatever is after keepScrolling>
+  return new Promise((resolve, reject)=>{
+    keepScrolling(resolve)
+  })
 }
 
 function saveFile(filename, content){
@@ -221,9 +238,16 @@ browser.runtime.onMessage.addListener(onMessage)
 browser.browserAction.onClicked.addListener(() => {
   chrome.tabs.executeScript({
       code: '(' + modifyDOM + ')()',
-  }, (chat) => {
-    console.log('RESULTS:')
-    console.log(chat)
-    // saveFile('kek', chat)
+  }, (chatPromise) => {
+    // alert('!')
+    // console.log('works')
+    // console.log(chatPromise)
+
+    // .then(()=>{
+    //   console.log('RESULTS:')
+    //   console.log(chat)
+    // })
+      
+      saveFile('whatsapp-' + chatPromise[0].title + '.json', JSON.stringify(chatPromise[0]))
   })
 })

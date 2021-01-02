@@ -1,6 +1,6 @@
 # Whatsapp Downloader
 
-This web extension scrolls to the top of a WhatsApp chat and downloads it as a JSON in the following example:
+This web extension scrolls to the top of a WhatsApp chat and downloads all messages as a JSON in the following example:
 
 ```
 {
@@ -22,8 +22,8 @@ This web extension scrolls to the top of a WhatsApp chat and downloads it as a J
             "sender": "You"
             "date": "31/12/2020",
             "time": "12:13",
-            "text": "Hi back",
-            "image": <base 64 data>,
+            "text": "Hi back, this is a blank image",
+            "image": "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=",
             "audio": null,
             "video": null,
             "isDeleted": false
@@ -62,7 +62,4 @@ This web extension scrolls to the top of a WhatsApp chat and downloads it as a J
 - [ ] use ISO-8601 for dates
 - [ ] compress output
 - [ ] sign/distribute
-
-## Resources used
-- https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/
-- https://extensionworkshop.com/documentation/develop/web-ext-command-reference/#web-ext-sign
+- [ ] UI version check
