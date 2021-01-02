@@ -1,43 +1,43 @@
 # Whatsapp Downloader
 
-This web extension scrolls to the top of a WhatsApp chat and downloads all messages as a JSON in the following example:
+This web extension scrolls to the top of a WhatsApp chat and downloads all messages as a JSON in the following format:
 
 ```
 {
     "title": "+55 11 98551-6777",
     "messages": [
         {
-            "sender": "+55 11 98551-6777"
+            "sender": "+55 11 98551-6777",
             "date": "31/12/2020",
             "time": "12:12",
             "text": "Hi",
             "image": null,
             "audio": null,
             "video": null,
-            "isDeleted": false
-            "isForwarded": false
+            "isDeleted": false,
+            "isForwarded": false,
             "quote": null
         },
         {
-            "sender": "You"
+            "sender": "You",
             "date": "31/12/2020",
             "time": "12:13",
             "text": "Hi back, this is a blank image",
             "image": "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=",
             "audio": null,
             "video": null,
-            "isDeleted": false
-            "isForwarded": false
+            "isDeleted": false,
+            "isForwarded": false,
             "quote": {
-                "sender": "+55 11 98551-6777"
+                "sender": "+55 11 98551-6777",
                 "date": "31/12/2020",
                 "time": "12:12",
                 "text": "Hi",
                 "image": null,
                 "audio": null,
                 "video": null,
-                "isDeleted": false
-                "isForwarded": false
+                "isDeleted": false,
+                "isForwarded": false,
                 "quote": null
             }
         }
