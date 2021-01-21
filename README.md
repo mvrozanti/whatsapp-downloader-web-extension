@@ -62,4 +62,5 @@ This web extension scrolls to the top of a WhatsApp chat and downloads all messa
 - [ ] use ISO-8601 for dates
 - [ ] compress output
 - [ ] sign/distribute
-- [ ] UI version check
+- [ ] WhatsApp UI version check
+- [ ] pop-up to checkbox what media should be downloaded
